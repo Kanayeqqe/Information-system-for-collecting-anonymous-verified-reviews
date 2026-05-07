@@ -72,19 +72,21 @@ B3 --> B1
 
 ## 🌎API
 
-## How to use
+## Как использовать
 
-- Import `openapi.yaml` into Swagger Editor, Postman, or Insomnia.
-- Backend developers should implement the API according to this spec.
+- Импортируйте `openapi.yaml` в Swagger Editor, Postman или Insomnia.
+- Разработчики backend должны реализовать API согласно спецификации.
+- Запустите локально с Docker: `docker compose up --build`.
 
-## Features
+## Возможности
 
-- Anonymous feedback submission
-- Owner-only access via token
-- Replies to feedback
-- Basic validation and rate limiting (to be implemented)
+- Анонимная отправка отзывов
+- Доступ только владельцу через токен
+- Ответы на отзывы
+- Токен можно передавать как параметр запроса `?token=...` или заголовок `X-Owner-Token`
+- Базовая валидация и ограничение скорости
 
-## Base URL
+## Базовый URL
 
 http://localhost:8000
 
@@ -116,7 +118,7 @@ POST /feedback/{id}/reply?token=...
 * IP не сохраняется (или хэшируется)
 * user-agent — опционально
 
-## ✅ Rate Limiting
+## ✅ Ограничение скорости
 
 * 5–10 запросов / минута на IP
 * применяется к:
