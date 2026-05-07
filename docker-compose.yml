@@ -3,6 +3,7 @@ version: '3.8'
 services:
   db:
     image: postgres:15
+    restart: unless-stopped
     environment:
       POSTGRES_DB: app_db
       POSTGRES_USER: user
@@ -15,6 +16,7 @@ services:
 
   api:
     build: .
+    restart: on-failure
     ports:
       - "8000:8000"
     depends_on:
@@ -23,3 +25,14 @@ services:
       - DB_USER=user
       - DB_PASSWORD=password
       - DB_NAME=app_db
+
+  bot:
+    build: .
+    restart: on-failure
+    depends_on:
+      - api
+      - db
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - API_BASE_URL=${API_BASE_URL:-http://api:8000}
+    command: ["python", "-u", "-m", "bot.main"]

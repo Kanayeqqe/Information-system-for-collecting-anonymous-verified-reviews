@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from src.db.database import Base
 
 class Feedback(Base):
@@ -11,7 +11,7 @@ class Feedback(Base):
     text = Column(String, nullable=False)
     status = Column(String, nullable=False, default="approved")
     moderation_notes = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     box = relationship("Box", back_populates="feedbacks")
     replies = relationship("Reply", back_populates="feedback", cascade="all, delete-orphan")

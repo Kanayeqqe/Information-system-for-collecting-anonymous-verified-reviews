@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class ReplyCreate(BaseModel):
     text: str
@@ -8,5 +8,4 @@ class ReplyOut(BaseModel):
     text: str
     created_at: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

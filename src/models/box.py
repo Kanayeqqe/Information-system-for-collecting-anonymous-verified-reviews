@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from src.db.database import Base
 
 class Box(Base):
@@ -9,6 +9,6 @@ class Box(Base):
     id = Column(Integer, primary_key=True)
     uuid = Column(String, unique=True, nullable=False)
     owner_token = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     feedbacks = relationship("Feedback", back_populates="box", cascade="all, delete-orphan")

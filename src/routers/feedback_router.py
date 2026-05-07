@@ -21,7 +21,15 @@ def send_feedback(uuid: str, feedback: FeedbackCreate, request: Request, db: Ses
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Box not found")
 
     created = create_feedback(db, box.id, feedback.text)
-    return created
+    # Normalize response types to match Pydantic schema (created_at is a string in API contract).
+    return FeedbackOut(
+        id=created.id,
+        text=created.text,
+        status=created.status,
+        moderation_notes=created.moderation_notes,
+        created_at=created.created_at.isoformat(),
+        replies=[],
+    )
 
 @router.get("/box/{uuid}", response_model=BoxFeedbacksResponse)
 def get_feedbacks(uuid: str, token: str = Query(None), x_owner_token: str = Header(None, alias="X-Owner-Token"), db: Session = Depends(get_db)):

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from src.db.database import Base
 
 class Reply(Base):
@@ -9,6 +9,6 @@ class Reply(Base):
     id = Column(Integer, primary_key=True)
     feedback_id = Column(Integer, ForeignKey("feedbacks.id"), nullable=False)
     text = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     feedback = relationship("Feedback", back_populates="replies")

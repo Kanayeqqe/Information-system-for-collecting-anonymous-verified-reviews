@@ -1,20 +1,18 @@
 from typing import List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class BoxCreateResponse(BaseModel):
     uuid: str
     owner_token: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ReplyOut(BaseModel):
     id: int
     text: str
     created_at: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FeedbackOut(BaseModel):
     id: int
@@ -24,12 +22,10 @@ class FeedbackOut(BaseModel):
     created_at: str
     replies: List[ReplyOut] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class BoxFeedbacksResponse(BaseModel):
     uuid: str
     feedbacks: List[FeedbackOut] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

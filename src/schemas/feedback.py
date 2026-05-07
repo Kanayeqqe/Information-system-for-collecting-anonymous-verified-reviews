@@ -1,5 +1,5 @@
 from typing import List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class FeedbackCreate(BaseModel):
     text: str
@@ -9,8 +9,7 @@ class ReplyOut(BaseModel):
     text: str
     created_at: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FeedbackOut(BaseModel):
     id: int
@@ -20,5 +19,4 @@ class FeedbackOut(BaseModel):
     created_at: str
     replies: List[ReplyOut] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
