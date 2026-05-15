@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "watch:css": "tailwindcss -i ./src/styles/styles.css -o ./src/styles/style.css --watch",
     "tailwind:watch": "tailwindcss -i ./src/styles/styles.css -o ./src/styles/style.css --watch",
-    "electron:start": "vite",
+    "electron:start": "vite --host",
     "start": "concurrently \"npm run tailwind:watch\" \"npm run electron:start\""
   },
   "dependencies": {
