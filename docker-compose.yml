@@ -1,16 +1,22 @@
 services:
+
   db:
-    image: postgres:15
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: app_db
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+      image: postgres:15
+      restart: unless-stopped
+      environment:
+        POSTGRES_DB: ${DB_NAME}
+        POSTGRES_USER: ${DB_USER}
+        POSTGRES_PASSWORD: ${DB_PASSWORD}
+      ports:
+        - "5433:5432"
+      volumes:
+        - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+        - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+        interval: 5s
+        timeout: 5s
+        retries: 5
 
   api:
     build: .
@@ -18,22 +24,41 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_NAME=app_db
-      - DATABASE_URL=postgresql://user:password@db:5432/app_db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
 
   bot:
     build: .
     restart: on-failure
     depends_on:
-      - api
-      - db
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME:-anonymous_verified_reviews_bot}
       - API_BASE_URL=${API_BASE_URL:-http://api:8000}
       - PUBLIC_API_BASE_URL=${PUBLIC_API_BASE_URL:-http://localhost:8000}
     command: ["python", "-u", "-m", "bot.main"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: on-failure
+    ports:
+      - "5173:5173"
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      - NODE_ENV=development
+      - VITE_API_BASE_URL=${API_BASE_URL}

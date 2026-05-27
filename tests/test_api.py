@@ -2,7 +2,10 @@ import os
 import importlib
 from fastapi.testclient import TestClient
 
-os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ.setdefault(
+    "DATABASE_URL",
+    "postgresql://admin:adminadmin@localhost:5433/anonymous",
+)
 import src.db.database as database
 importlib.reload(database)
 database.init_db()
@@ -46,3 +49,42 @@ def test_full_box_lifecycle():
 
     owner_view_after = client.get(f"/box/{uuid}", params={"token": token})
     assert len(owner_view_after.json()["feedbacks"][0]["replies"]) == 1
+
+
+def test_auth_register_and_login():
+    register_resp = client.post(
+        "/auth/register",
+        json={"username": "testuser", "password": "secret123", "confirm_password": "secret123"},
+    )
+    assert register_resp.status_code == 201
+    register_data = register_resp.json()
+    assert register_data["username"] == "testuser"
+    assert register_data["token"]
+
+    login_resp = client.post(
+        "/auth/login",
+        json={"username": "testuser", "password": "secret123"},
+    )
+    assert login_resp.status_code == 200
+    login_data = login_resp.json()
+    assert login_data["username"] == "testuser"
+    assert login_data["token"] == register_data["token"]
+
+    invalid_login = client.post(
+        "/auth/login",
+        json={"username": "testuser", "password": "wrongpass"},
+    )
+    assert invalid_login.status_code == 401
+
+    duplicate_register = client.post(
+        "/auth/register",
+        json={"username": "testuser", "password": "secret123", "confirm_password": "secret123"},
+    )
+    assert duplicate_register.status_code == 400
+
+    me_resp = client.get(
+        "/auth/me",
+        headers={"Authorization": f"Bearer {register_data['token']}"},
+    )
+    assert me_resp.status_code == 200
+    assert me_resp.json()["username"] == "testuser"

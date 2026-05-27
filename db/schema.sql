@@ -1,3 +1,11 @@
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    auth_token TEXT UNIQUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE boxes (
     id SERIAL PRIMARY KEY,
     uuid TEXT UNIQUE NOT NULL,

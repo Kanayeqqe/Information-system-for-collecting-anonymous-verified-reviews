@@ -78,6 +78,62 @@ B3 --> B1
 - Разработчики backend должны реализовать API согласно спецификации.
 - Перед запуском заполните `.env` с `TELEGRAM_BOT_TOKEN` и `API_BASE_URL`.
 - Запустите локально с Docker: `docker compose up --build`.
+- Откройте документацию API по адресу: `http://localhost:8000/docs` или `http://localhost:8000/redoc`.
+
+## Первоначальная установка и запуск
+
+1. Установите систему:
+   - Docker Desktop для Windows.
+   - Node.js.
+   - Python.
+
+2. Клонируйте репозиторий и перейдите в папку проекта:
+   ```bash
+   git clone <repo-url>
+   cd Information-system-for-collecting-anonymous-verified-reviews
+   ```
+
+3. Подготовьте переменные окружения:
+   - Создайте файл `.env` в корне проекта.
+   - Добавьте в него:
+     ```env
+     TELEGRAM_BOT_TOKEN=ваш_токен
+     API_BASE_URL=http://localhost:8000
+     ```
+
+4. Установите зависимости backend (если используете локальный запуск без Docker):
+   ```bash
+   python -m venv .venv
+   .\.venv\Scripts\activate
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+
+5. Установите зависимости frontend:
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+6. Запустите приложение в Docker (рекомендуемый способ):
+   ```bash
+   docker compose up --build
+   ```
+
+7. Если вы предпочитаете запускать сервисы локально по отдельности:
+   - Backend:
+     ```bash
+     uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+     ```
+   - Frontend:
+     ```bash
+     cd frontend
+     npm run dev
+     ```
+
+8. Откройте в браузере:
+   - Backend: `http://localhost:8000`
+   - Frontend: адрес, указанный в `npm run dev`
 
 ## Возможности
 
