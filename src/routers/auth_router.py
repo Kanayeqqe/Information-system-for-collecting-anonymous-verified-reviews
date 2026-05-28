@@ -1,10 +1,14 @@
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, Header, status
 from sqlalchemy.orm import Session
 from src.db.database import get_db
 from src.schemas.user import RegisterRequest, LoginRequest, AuthResponse
 from src.services.user_service import create_user, authenticate_user, get_user_by_token, get_user_by_username
+from fastapi import Header
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+security = HTTPBearer()
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
@@ -28,10 +32,11 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=AuthResponse)
-def me(authorization: str = Header(None, alias="Authorization"), db: Session = Depends(get_db)):
-    if authorization is None or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization header missing or invalid")
-    token = authorization.split(" ", 1)[1].strip()
+def me(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    token = credentials.credentials
     user = get_user_by_token(db, token)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
