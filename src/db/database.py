@@ -3,6 +3,8 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from src.logger import logger
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL is None:
     db_user = os.getenv("DB_USER")
@@ -35,4 +37,19 @@ def get_db():
 
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
+    try:
+        db_host = os.getenv("DB_HOST", "db")
+        db_port = os.getenv("DB_PORT", "5432")
+        db_name = os.getenv("DB_NAME") or "<unknown>"
+        with engine.connect() as conn:
+            logger.info(
+                "PostgreSQL connection verified: %s:%s/%s",
+                db_host,
+                db_port,
+                db_name,
+            )
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database schema initialized successfully.")
+    except Exception as exc:
+        logger.critical("Database initialization failed.", exc_info=exc)
+        raise

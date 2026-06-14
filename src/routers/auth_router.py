@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -5,6 +7,8 @@ from src.db.database import get_db
 from src.models.box import Box
 from src.models.feedback import Feedback
 from src.models.user import User
+
+logger = logging.getLogger(__name__)
 from src.schemas.box import (
     BoxUuidOut,
     FeedbackShortOut,
@@ -33,17 +37,23 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 )
 def register(data: RegisterRequest, db: Session = _db_dependency):
     """Регистрирует нового пользователя и создает auth token."""
+    logger.info("Register attempt for username=%s", data.username)
     if data.password != data.confirm_password:
+        logger.warning(
+            "Password confirmation mismatch for username=%s", data.username
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match"
         )
 
     if get_user_by_username(db, data.username) is not None:
+        logger.warning("Registration failed: username already exists=%s", data.username)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists"
         )
 
     user = create_user(db, data.username, data.password)
+    logger.info("User registered successfully: %s", user.username)
     return AuthResponse(username=user.username, token=user.auth_token)
 
 
@@ -55,12 +65,15 @@ def register(data: RegisterRequest, db: Session = _db_dependency):
 )
 def login(data: LoginRequest, db: Session = _db_dependency):
     """Авторизует пользователя и возвращает токен доступа."""
+    logger.info("Login attempt for username=%s", data.username)
     user = authenticate_user(db, data.username, data.password)
     if user is None:
+        logger.warning("Login failed for username=%s", data.username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
+    logger.info("Login successful for username=%s", user.username)
     return AuthResponse(username=user.username, token=user.auth_token)
 
 
@@ -75,12 +88,15 @@ def me(
     db: Session = _db_dependency,
 ):
     """Возвращает информацию о текущем авторизованном пользователе."""
+    logger.info("Auth info requested")
     user = _get_user_or_401(authorization, db)
+    logger.info("Auth info returned for user=%s", user.username)
     return AuthResponse(username=user.username, token=user.auth_token)
 
 
 def _get_user_or_401(authorization: str | None, db: Session) -> User:
     if not authorization:
+        logger.warning("Authorization header missing")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authorization header missing",
@@ -90,6 +106,7 @@ def _get_user_or_401(authorization: str | None, db: Session) -> User:
         token = token[7:].strip()
     user = get_user_by_token(db, token)
     if user is None:
+        logger.warning("Invalid bearer token provided")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
@@ -107,6 +124,7 @@ def my_boxes(
     db: Session = _db_dependency,
 ):
     """Возвращает список ящиков отзывов пользователя."""
+    logger.info("Fetching boxes for authenticated user")
     user = _get_user_or_401(authorization, db)
     items = [
         BoxUuidOut(uuid=box.uuid, created_at=box.created_at.isoformat())
@@ -115,6 +133,7 @@ def my_boxes(
         .order_by(Box.created_at.desc())
         .all()
     ]
+    logger.info("Returning %s boxes for user=%s", len(items), user.username)
     return UserBoxesResponse(boxes=items)
 
 
