@@ -162,6 +162,15 @@ PUBLIC_API_BASE_URL=http://localhost:8000
 
 ---
 
+## 🐳 Установка Docker
+### Скачайте Docker Desktop с официального сайта:
+### https://www.docker.com/products/docker-desktop
+
+### Или через winget (Windows 10/11)
+```bash
+winget install Docker.DockerDesktop
+```
+
 ## 🐳 Запуск через Docker
 
 ### Запуск
