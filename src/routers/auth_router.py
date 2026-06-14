@@ -25,9 +25,14 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post(
-    "/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED
+    "/register",
+    response_model=AuthResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Зарегистрировать пользователя",
+    description="Создает нового пользователя и возвращает auth token для доступа к личным эндпоинтам."
 )
 def register(data: RegisterRequest, db: Session = _db_dependency):
+    """Регистрирует нового пользователя и создает auth token."""
     if data.password != data.confirm_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match"
@@ -42,8 +47,14 @@ def register(data: RegisterRequest, db: Session = _db_dependency):
     return AuthResponse(username=user.username, token=user.auth_token)
 
 
-@router.post("/login", response_model=AuthResponse)
+@router.post(
+    "/login",
+    response_model=AuthResponse,
+    summary="Авторизоваться",
+    description="Возвращает auth token для существующего пользователя."
+)
 def login(data: LoginRequest, db: Session = _db_dependency):
+    """Авторизует пользователя и возвращает токен доступа."""
     user = authenticate_user(db, data.username, data.password)
     if user is None:
         raise HTTPException(
@@ -53,11 +64,17 @@ def login(data: LoginRequest, db: Session = _db_dependency):
     return AuthResponse(username=user.username, token=user.auth_token)
 
 
-@router.get("/me", response_model=AuthResponse)
+@router.get(
+    "/me",
+    response_model=AuthResponse,
+    summary="Информация о текущем пользователе",
+    description="Возвращает данные пользователя по Bearer-токену."
+)
 def me(
     authorization: str = Header(None, alias="Authorization"),
     db: Session = _db_dependency,
 ):
+    """Возвращает информацию о текущем авторизованном пользователе."""
     user = _get_user_or_401(authorization, db)
     return AuthResponse(username=user.username, token=user.auth_token)
 
@@ -79,11 +96,17 @@ def _get_user_or_401(authorization: str | None, db: Session) -> User:
     return user
 
 
-@router.get("/my-boxes", response_model=UserBoxesResponse)
+@router.get(
+    "/my-boxes",
+    response_model=UserBoxesResponse,
+    summary="Список box текущего пользователя",
+    description="Возвращает UUIDs всех box, принадлежащих текущему пользователю."
+)
 def my_boxes(
     authorization: str = Header(None, alias="Authorization"),
     db: Session = _db_dependency,
 ):
+    """Возвращает список ящиков отзывов пользователя."""
     user = _get_user_or_401(authorization, db)
     items = [
         BoxUuidOut(uuid=box.uuid, created_at=box.created_at.isoformat())
@@ -95,11 +118,17 @@ def my_boxes(
     return UserBoxesResponse(boxes=items)
 
 
-@router.get("/my-feedbacks", response_model=UserFeedbacksResponse)
+@router.get(
+    "/my-feedbacks",
+    response_model=UserFeedbacksResponse,
+    summary="Список всех отзывов пользователя",
+    description="Возвращает все отзывы и ответы для всех box текущего пользователя."
+)
 def my_feedbacks(
     authorization: str = Header(None, alias="Authorization"),
     db: Session = _db_dependency,
 ):
+    """Возвращает все отзывы пользователя и связанные ответы."""
     user = _get_user_or_401(authorization, db)
     my_box_ids = [
         row[0] for row in db.query(Box.id).filter(Box.user_id == user.id).all()

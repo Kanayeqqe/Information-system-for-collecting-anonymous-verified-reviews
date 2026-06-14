@@ -12,12 +12,19 @@ _db_dependency = Depends(get_db)
 router = APIRouter()
 
 
-@router.post("/box", response_model=BoxCreateResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/box",
+    response_model=BoxCreateResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Создать новый box",
+    description="Создает новый ящик отзывов и возвращает UUID и owner_token."
+)
 def create_box_endpoint(
     request: Request,
     authorization: str = Header(None, alias="Authorization"),
     db: Session = _db_dependency,
 ):
+    """Создает новый box. Если предоставлен Authorization Bearer токен, связывает box с пользователем."""
     check_rate(request.client.host, "POST:/box")
     user_id = None
     if authorization:

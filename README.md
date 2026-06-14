@@ -100,14 +100,20 @@ PUBLIC_API_BASE_URL=http://localhost:8000
 ```
 
 ### Описание переменных
-- `DB_HOST` — адрес PostgreSQL (`db` в Docker Compose или `localhost` для локального запуска).
-- `DB_PORT` — порт PostgreSQL (`5432`).
-- `DB_NAME` — имя базы данных.
-- `DB_USER` — пользователь PostgreSQL.
-- `DB_PASSWORD` — пароль PostgreSQL.
-- `TELEGRAM_BOT_TOKEN` — токен Telegram-бота.
-- `API_BASE_URL` — базовый адрес API для внутренних сервисов.
-- `PUBLIC_API_BASE_URL` — публичный адрес API при запуске.
+Таблица показывает, где используется каждая переменная.
+
+| Переменная | Значение | Используется в | Описание |
+| --- | --- | --- | --- |
+| `DB_HOST` | `db` | backend, bot | Хост PostgreSQL внутри Docker Compose или `localhost` для локального запуска |
+| `DB_PORT` | `5432` | backend, bot | Порт PostgreSQL |
+| `DB_NAME` | `avr_db` | backend, bot | Имя базы данных |
+| `DB_USER` | `avr_user` | backend, bot | Пользователь PostgreSQL |
+| `DB_PASSWORD` | `strong_password_here` | backend, bot | Пароль PostgreSQL |
+| `TELEGRAM_BOT_TOKEN` | `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11` | bot | Токен Telegram-бота |
+| `API_BASE_URL` | `http://localhost:8000` | bot, frontend | Базовый URL API для сервисов |
+| `PUBLIC_API_BASE_URL` | `http://localhost:8000` | bot | Внешний доступный URL API |
+
+> Примечание: `VITE_API_BASE_URL` настраивается в `frontend/.env.example` и используется только для frontend сборки.
 
 ---
 

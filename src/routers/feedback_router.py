@@ -20,11 +20,16 @@ router = APIRouter()
 
 
 @router.post(
-    "/box/{uuid}/feedback", response_model=FeedbackOut, status_code=status.HTTP_200_OK
+    "/box/{uuid}/feedback",
+    response_model=FeedbackOut,
+    status_code=status.HTTP_200_OK,
+    summary="Отправить анонимный отзыв",
+    description="Создает отзыв в указанном box по UUID."
 )
 def send_feedback(
     uuid: str, feedback: FeedbackCreate, request: Request, db: Session = _db_dependency
 ):
+    """Добавляет анонимный отзыв в указанный ящик отзывов."""
     check_rate(request.client.host, "POST:/box/{uuid}/feedback")
     box = db.query(Box).filter(Box.uuid == uuid).first()
     if box is None:
@@ -44,13 +49,19 @@ def send_feedback(
     )
 
 
-@router.get("/box/{uuid}", response_model=BoxFeedbacksResponse)
+@router.get(
+    "/box/{uuid}",
+    response_model=BoxFeedbacksResponse,
+    summary="Получить отзывы владельца",
+    description="Возвращает список отзывов для ящика по UUID при наличии owner token."
+)
 def get_feedbacks(
     uuid: str,
     token: str = Query(None),
     x_owner_token: str = Header(None, alias="X-Owner-Token"),
     db: Session = _db_dependency,
 ):
+    """Возвращает все отзывы и ответы для указанного ящика при проверке owner token."""
     box = db.query(Box).filter(Box.uuid == uuid).first()
     if box is None:
         raise HTTPException(
@@ -83,7 +94,11 @@ def get_feedbacks(
 
 
 @router.post(
-    "/feedback/{id}/reply", response_model=ReplyOut, status_code=status.HTTP_200_OK
+    "/feedback/{id}/reply",
+    response_model=ReplyOut,
+    status_code=status.HTTP_200_OK,
+    summary="Ответить на отзыв",
+    description="Добавляет ответ владельца к отзыву по его ID, если owner token верен."
 )
 def reply(
     id: int,
@@ -93,6 +108,7 @@ def reply(
     x_owner_token: str = Header(None, alias="X-Owner-Token"),
     db: Session = _db_dependency,
 ):
+    """Создает ответ на отзыв владельца."""
     check_rate(request.client.host, "POST:/feedback/{id}/reply")
     feedback = db.query(Feedback).filter(Feedback.id == id).first()
     if feedback is None:
