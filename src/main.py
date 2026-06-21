@@ -1,3 +1,7 @@
+from src.logger import setup_logging
+
+setup_logging()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -39,10 +43,6 @@ def custom_openapi():
         "scheme": "bearer",
         "bearerFormat": "token",
     }
-    for path in openapi_schema.get("paths", {}).values():
-        for operation in path.values():
-            if isinstance(operation, dict):
-                operation.setdefault("security", []).append({"BearerAuth": []})
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 

@@ -3,6 +3,8 @@ __pycache__/
 .venv/
 *.pyc
 *.log
+logs/
+backups/
 *.db
 .DS_Store
 frontend/node_modules/

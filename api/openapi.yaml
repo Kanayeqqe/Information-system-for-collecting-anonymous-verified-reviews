@@ -1,126 +1,133 @@
 openapi: 3.0.3
 info:
-  title: Anonymous Feedback API
+  title: Anonymous Verified Reviews API
   version: 1.0.0
-  description: API for anonymous but owner-controlled feedback boxes
+  description: |
+    REST API для анонимного сбора отзывов и управления ими владельцем через токен.
 
 servers:
   - url: http://localhost:8000
 
 paths:
-
-  /box:
-    post:
-      summary: Create a new feedback box
+  /health:
+    get:
+      summary: Проверка доступности сервиса
+      description: Возвращает статус работоспособности API.
       responses:
         '200':
-          description: Box created
+          description: Сервис доступен
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  uuid:
-                    type: string
-                  owner_token:
-                    type: string
+                $ref: '#/components/schemas/HealthResponse'
+
+  /box:
+    post:
+      summary: Создать новый feedback box
+      description: Создает новый ящик отзывов и возвращает UUID и owner token.
+      parameters:
+        - name: Authorization
+          in: header
+          description: 'Bearer токен пользователя (необязательно).'
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Box создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoxCreateResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /box/{uuid}/feedback:
     post:
-      summary: Send anonymous feedback
+      summary: Отправить анонимный отзыв
+      description: Создает отзыв в указанном box по UUID.
       parameters:
-        - name: uuid
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/boxUuid'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - text
-              properties:
-                text:
-                  type: string
-                  maxLength: 500
+              $ref: '#/components/schemas/FeedbackCreate'
+            example:
+              text: "Мне нравится использовать этот сервис."
       responses:
         '200':
-          description: Feedback created
+          description: Feedback создан
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
+                $ref: '#/components/schemas/FeedbackOut'
         '400':
-          description: Invalid input
+          description: Неверные входные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Box not found
+          description: Box не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '429':
-          description: Too many requests
+          description: Слишком много запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
-  /box/{uuid}/feedbacks:
+  /box/{uuid}:
     get:
-      summary: Get feedbacks (owner only)
-      security:
-        - bearerAuth: []
+      summary: Получить отзывы владельца
+      description: Возвращает список отзывов для box, доступно только с owner token.
       parameters:
-        - name: uuid
-          in: path
-          required: true
+        - $ref: '#/components/parameters/boxUuid'
+        - name: token
+          in: query
+          description: Токен владельца.
+          required: false
           schema:
             type: string
-        - name: limit
-          in: query
+        - name: X-Owner-Token
+          in: header
+          description: Альтернативный заголовок для owner token.
+          required: false
           schema:
-            type: integer
-        - name: offset
-          in: query
-          schema:
-            type: integer
+            type: string
       responses:
         '200':
-          description: List of feedbacks
+          description: Список отзывов box
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                    text:
-                      type: string
-                    created_at:
-                      type: string
-                      format: date-time
-                    reply:
-                      type: object
-                      nullable: true
-                      properties:
-                        id:
-                          type: integer
-                        text:
-                          type: string
-                        created_at:
-                          type: string
-                          format: date-time
+                $ref: '#/components/schemas/BoxFeedbacksResponse'
         '403':
-          description: Forbidden
+          description: Доступ запрещен (неверный owner token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Box not found
+          description: Box не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /feedback/{id}/reply:
     post:
-      summary: Reply to feedback (owner only)
-      security:
-        - bearerAuth: []
+      summary: Ответить на отзыв владельцу
+      description: Создает ответ на существующий отзыв.
       parameters:
         - name: id
           in: path
@@ -132,30 +139,320 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - text
-              properties:
-                text:
-                  type: string
+              $ref: '#/components/schemas/ReplyCreate'
+            example:
+              text: "Спасибо за ваш отзыв!"
       responses:
         '200':
-          description: Reply created
+          description: Ответ создан
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
+                $ref: '#/components/schemas/ReplyOut'
+        '400':
+          description: Неверные данные запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: Forbidden
+          description: Доступ запрещен (неверный owner token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Feedback not found
+          description: Отзыв или box не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Слишком много запросов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/register:
+    post:
+      summary: Зарегистрировать пользователя
+      description: Создает нового пользователя и возвращает auth token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              username: "admin"
+              password: "strong_password"
+              confirm_password: "strong_password"
+      responses:
+        '201':
+          description: Пользователь зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Неверные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      summary: Авторизоваться
+      description: Возвращает token для существующего пользователя.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: "admin"
+              password: "strong_password"
+      responses:
+        '200':
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Неверный логин или пароль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me:
+    get:
+      summary: Получить данные текущего пользователя
+      description: Возвращает информацию о пользователе по Bearer-токену.
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Отсутствует или неверный токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/my-boxes:
+    get:
+      summary: Список box текущего пользователя
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список box
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBoxesResponse'
+        '401':
+          description: Неверный токен авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/my-feedbacks:
+    get:
+      summary: Список всех отзывов пользователя
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список отзывов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserFeedbacksResponse'
+        '401':
+          description: Неверный токен авторизации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
+  parameters:
+    boxUuid:
+      name: uuid
+      in: path
+      required: true
+      description: UUID ящика отзывов.
+      schema:
+        type: string
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "Ошибка запроса"
+    BoxCreateResponse:
+      type: object
+      properties:
+        uuid:
+          type: string
+          example: "3f8b2d0f-1eae-4d99-a29b-9c2dbd02d0a3"
+        owner_token:
+          type: string
+          example: "owner_1a2b3c4d5e"
+    FeedbackCreate:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: Текст отзыва
+          example: "Мне нравится сервис, но хотелось бы больше опций."
+    ReplyCreate:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: Текст ответа владельца
+          example: "Спасибо за отзыв!"
+    FeedbackOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        text:
+          type: string
+          example: "Это анонимный отзыв"
+        status:
+          type: string
+          example: "approved"
+        moderation_notes:
+          type: string
+          nullable: true
+          example: null
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-06-09T12:00:00"
+        replies:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReplyOut'
+    ReplyOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        text:
+          type: string
+          example: "Спасибо за ваш отзыв"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-06-09T12:05:00"
+    BoxFeedbacksResponse:
+      type: object
+      properties:
+        uuid:
+          type: string
+          example: "3f8b2d0f-1eae-4d99-a29b-9c2dbd02d0a3"
+        feedbacks:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeedbackOut'
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+        - confirm_password
+      properties:
+        username:
+          type: string
+          example: "admin"
+        password:
+          type: string
+          example: "strong_password"
+        confirm_password:
+          type: string
+          example: "strong_password"
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: "admin"
+        password:
+          type: string
+          example: "strong_password"
+    AuthResponse:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "admin"
+        token:
+          type: string
+          example: "owner-auth-token"
+    BoxUuidOut:
+      type: object
+      properties:
+        uuid:
+          type: string
+          example: "3f8b2d0f-1eae-4d99-a29b-9c2dbd02d0a3"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-06-09T11:00:00"
+    UserBoxesResponse:
+      type: object
+      properties:
+        boxes:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoxUuidOut'
+    UserFeedbacksResponse:
+      type: object
+      properties:
+        feedbacks:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeedbackOut'

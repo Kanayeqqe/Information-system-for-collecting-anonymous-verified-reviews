@@ -91,6 +91,7 @@ class ApiClient:
             try:
                 client = await self._get_client()
                 url = f"{self.base_url}{path}"
+                logger.info("Outgoing API request: %s %s params=%s", method, url, params)
                 resp = await client.request(method, url, params=params, json=json)
             except httpx.TimeoutException as exc:
                 if attempt < self._max_retries:
